@@ -1,6 +1,6 @@
 # TicketChain
 
-NFT event tickets with fraud-proof QR check-in, backed by a production-style Web3 backend.
+NFT event tickets with fraud-proof QR check-in, backed by a Web3 backend.
 
 Organizers create events and sell tickets that are minted as NFTs. Buyers keep tickets in their wallet and show a **rotating QR code** at the door. Staff scan it, and the backend answers in milliseconds whether the ticket is valid. The ticket is then marked **used on-chain** through a backend relayer, so it can never be used or resold as unused again.
 

@@ -2,7 +2,7 @@
   "name": "ticketchain",
   "version": "0.1.0",
   "private": true,
-  "description": "NFT event tickets with fraud-proof QR check-in, backed by a production-style Web3 backend.",
+  "description": "NFT event tickets with fraud-proof QR check-in, backed by a Web3 backend.",
   "type": "module",
   "engines": {
     "node": ">=22"
