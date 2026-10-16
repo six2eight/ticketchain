@@ -217,9 +217,13 @@ describe("e2e", () => {
 
     await waitFor(async () => (await ticket(tokenId)).status === 404);
     expect((await api<{ sold: number }>("GET", "/events/1")).body.sold).toBe(soldBefore);
+    // Rollback and indexing the replacement blocks are separate transactions, so the new
+    // branch's StaffUpdated may land a moment after the purchase has disappeared.
     const staffToken = await login(accounts.organizer);
-    const staff = await api<{ items: string[] }>("GET", "/events/1/staff", { token: staffToken });
-    expect(staff.body.items).toContain(accounts.buyer3.address.toLowerCase());
+    await waitFor(async () => {
+      const staff = await api<{ items: string[] }>("GET", "/events/1/staff", { token: staffToken });
+      return staff.body.items.includes(accounts.buyer3.address.toLowerCase());
+    });
 
     // The chain moves on normally after the reorg.
     const next = await buy(accounts.buyer1);
