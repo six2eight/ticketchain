@@ -1,0 +1,11 @@
+node_modules
+artifacts
+cache
+types
+deployments
+src/chain/abi.ts
+PLAN.md
+src/db/generated
+test/.tmp
+web/dist
+prisma/migrations
