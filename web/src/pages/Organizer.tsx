@@ -6,7 +6,8 @@ import { useConnection } from "wagmi";
 import { api, type EventDto, type Page } from "../api";
 import { TxStatus } from "../components/TxStatus";
 import { RequireSession } from "../components/WalletBar";
-import { eth, readContract, short, toWei, useAppConfig, useContractTx, when } from "../hooks";
+import { Withdraw } from "../components/Withdraw";
+import { eth, short, toWei, useContractTx, when } from "../hooks";
 import { useSession } from "../session";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -20,7 +21,7 @@ export function OrganizerPage() {
       <section>
         <h1>Organizer</h1>
         <CreateEvent />
-        <Withdraw />
+        <Withdraw label="Revenue ready to withdraw" />
         <MyEvents />
       </section>
     </RequireSession>
@@ -122,40 +123,6 @@ function CreateEvent() {
       {error && <p className="notice error">{error}</p>}
       <TxStatus state={tx.state} />
     </form>
-  );
-}
-
-function Withdraw() {
-  const { address } = useConnection();
-  const { data: cfg } = useAppConfig();
-  const tx = useContractTx();
-  const balance = useQuery({
-    queryKey: ["pending", address, cfg?.contractAddress],
-    enabled: Boolean(address && cfg),
-    queryFn: () => readContract<bigint>(cfg!.contractAddress, "pendingWithdrawals", [address]),
-    refetchInterval: 4000,
-  });
-  const amount = balance.data ?? 0n;
-  return (
-    <div className="card row between">
-      <div>
-        <span className="label">Revenue ready to withdraw</span>
-        <strong data-testid="withdrawable">{eth(amount)}</strong>
-      </div>
-      <button
-        className="btn"
-        disabled={amount === 0n || tx.state.status === "pending"}
-        onClick={() =>
-          void tx
-            .send("Withdraw", "withdraw", [])
-            .then(() => balance.refetch())
-            .catch(() => undefined)
-        }
-      >
-        Withdraw
-      </button>
-      <TxStatus state={tx.state} />
-    </div>
   );
 }
 

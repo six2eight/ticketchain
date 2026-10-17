@@ -14,6 +14,18 @@ test("organizer creates an event and adds staff", async ({ browser }) => {
   const manage = page.getByTestId("manage-1");
   await expect(manage).toContainText("Playwright Fest");
   await expect(page.getByTestId("sold-1")).toHaveText("0/50");
+  await page.goto("/#/events");
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveText([
+    "Events",
+    "My Tickets",
+    "Resale",
+    "Organizer",
+    "Scanner",
+  ]);
+  await page
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("link", { name: "Organizer" })
+    .click();
 
   await manage.getByLabel("Staff wallet for event 1").fill(STAFF);
   await manage.getByRole("button", { name: "Add staff" }).click();
@@ -29,6 +41,12 @@ test("organizer creates an event and adds staff", async ({ browser }) => {
 
 test("buyer buys a ticket, shows the rotating QR and staff admits it once", async ({ browser }) => {
   const buyer = await openAs(browser, "Buyer 1 (#3)");
+  // A plain buyer gets no organizer or scanner menus.
+  await expect(buyer.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveText([
+    "Events",
+    "My Tickets",
+    "Resale",
+  ]);
   await expect(buyer.getByTestId("event-1")).toContainText("Playwright Fest");
   await expect(buyer.getByTestId("event-1")).toContainText("ICCB, Dhaka");
   await shot(buyer, "events");
@@ -50,7 +68,17 @@ test("buyer buys a ticket, shows the rotating QR and staff admits it once", asyn
   await expect(qr).not.toHaveValue("");
   const qrText = await qr.inputValue();
 
-  const staff = await openAs(browser, "Staff (#6)", "#/scanner");
+  const staff = await openAs(browser, "Staff (#6)", "#/events");
+  await expect(staff.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveText([
+    "Events",
+    "My Tickets",
+    "Resale",
+    "Scanner",
+  ]);
+  await staff
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("link", { name: "Scanner" })
+    .click();
   await expect(staff.getByLabel("Event to scan")).toHaveValue("1");
   await staff.getByLabel("QR text").fill(qrText);
   await staff.getByRole("button", { name: "Verify" }).click();
@@ -98,6 +126,17 @@ test("resale respects the price cap and moves the ticket", async ({ browser }) =
   await expect(buyer.getByTestId("ticket-2")).toBeVisible({ timeout: 30_000 });
   await seller.reload();
   await expect(seller.getByText("You have no tickets yet.")).toBeVisible({ timeout: 30_000 });
+
+  // The seller collects the resale proceeds from My Tickets (no Organizer menu needed).
+  await expect(seller.getByText("Resale earnings ready to withdraw")).toBeVisible();
+  await expect(seller.getByTestId("withdrawable")).toHaveText("0.015 ETH");
+  await seller.getByRole("button", { name: "Withdraw" }).click();
+  await expect(seller.getByText("Withdraw: confirmed")).toBeVisible();
+  await expect(seller.getByTestId("withdrawable")).toHaveText("0 ETH");
+  await shot(seller, "seller-withdrawn");
+
+  // A buyer who never sold anything sees no withdraw card at all.
+  await expect(buyer.getByText("Resale earnings ready to withdraw")).toHaveCount(0);
 });
 
 test("organizer sees stats and withdraws revenue", async ({ browser }) => {

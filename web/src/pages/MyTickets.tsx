@@ -5,6 +5,7 @@ import { api, type EventDto, type Page, type TicketDto } from "../api";
 import { TicketQr } from "../components/TicketQr";
 import { TxStatus } from "../components/TxStatus";
 import { RequireSession } from "../components/WalletBar";
+import { Withdraw } from "../components/Withdraw";
 import { eth, toWei, useContractTx, when } from "../hooks";
 import { useSession } from "../session";
 
@@ -25,16 +26,20 @@ function Tickets() {
   });
   if (tickets.isPending) return <p className="empty">Loading your tickets…</p>;
   if (tickets.isError) return <p className="notice error">{tickets.error.message}</p>;
-  if (tickets.data.items.length === 0)
-    return <p className="empty">You have no tickets yet. Buy one from the Events tab.</p>;
   return (
     <section>
       <h1>My tickets</h1>
-      <div className="grid wide">
-        {tickets.data.items.map((t) => (
-          <TicketCard key={t.tokenId} ticket={t} />
-        ))}
-      </div>
+      {/* Resale proceeds wait in the contract until the seller withdraws them. */}
+      <Withdraw label="Resale earnings ready to withdraw" hideWhenEmpty />
+      {tickets.data.items.length === 0 ? (
+        <p className="empty">You have no tickets yet. Buy one from the Events tab.</p>
+      ) : (
+        <div className="grid wide">
+          {tickets.data.items.map((t) => (
+            <TicketCard key={t.tokenId} ticket={t} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

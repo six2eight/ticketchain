@@ -17,12 +17,25 @@ export function EventsPage() {
   if (events.isError)
     return <p className="notice error">Could not load events: {events.error.message}</p>;
   const items = [...events.data.items].reverse();
-  if (items.length === 0)
-    return <p className="empty">No events yet. Organizers can create one in the Organizer tab.</p>;
+  if (items.length === 0) {
+    return (
+      <div className="empty">
+        <p>No events yet.</p>
+        <a className="btn" href="#/organizer">
+          Host an event
+        </a>
+      </div>
+    );
+  }
 
   return (
     <section>
-      <h1>Events</h1>
+      <div className="row between">
+        <h1>Events</h1>
+        <a className="link small" href="#/organizer">
+          Host an event →
+        </a>
+      </div>
       <div className="grid">
         {items.map((e) => (
           <article key={e.id} className="card event-card" data-testid={`event-${e.id}`}>

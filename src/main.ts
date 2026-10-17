@@ -107,6 +107,16 @@ const app = await buildApp({
   chainHead: () => publicClient.getBlockNumber({ cacheTime: 2_000 }),
 });
 
+const code = await publicClient.getCode({ address: config.contractAddress }).catch(() => undefined);
+if (code === undefined) {
+  logger.warn({ rpc: config.RPC_URL }, "chain not reachable yet; is the node running (npm run chain)?");
+} else if (code === "0x") {
+  logger.error(
+    { contract: config.contractAddress, rpc: config.RPC_URL },
+    'no contract at CONTRACT_ADDRESS on this chain; run "npm run deploy:local"',
+  );
+}
+
 await indexer.init();
 indexer.start();
 relayer.start();

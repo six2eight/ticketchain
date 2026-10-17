@@ -1,8 +1,12 @@
+import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { network } from "hardhat";
 import { getAddress, keccak256, toHex, type Address } from "viem";
+
+// `hardhat run` does not load .env; read it so PUBLIC_BASE_URL / RELAYER_ADDRESS apply.
+if (existsSync(".env")) process.loadEnvFile(".env");
 
 const { viem, networkName } = await network.create();
 const publicClient = await viem.getPublicClient();

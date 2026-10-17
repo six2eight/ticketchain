@@ -358,6 +358,22 @@ describe("tickets", () => {
     });
   });
 
+  it("GET /me/roles lists events I organize and staff", async () => {
+    expect((await get("/me/roles", await login(h.app, organizer))).json()).toEqual({
+      organizerOf: [1],
+      staffOf: [],
+    });
+    expect((await get("/me/roles", await login(h.app, staff))).json()).toEqual({
+      organizerOf: [],
+      staffOf: [1],
+    });
+    expect((await get("/me/roles", await login(h.app, buyer))).json()).toEqual({
+      organizerOf: [],
+      staffOf: [],
+    });
+    expect((await get("/me/roles")).statusCode).toBe(401);
+  });
+
   it("GET /tickets/:tokenId includes the transfer history", async () => {
     const res = await get("/tickets/1");
     expect(res.json()).toMatchObject({

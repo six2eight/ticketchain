@@ -5,6 +5,7 @@ import { useWalletClient } from "wagmi";
 
 import { ticketChainAbi } from "../../src/chain/abi";
 import { api, type PublicConfig } from "./api";
+import { useSession } from "./session";
 import { chain, publicClient } from "./config";
 
 export function useAppConfig() {
@@ -13,6 +14,30 @@ export function useAppConfig() {
     queryFn: () => api<PublicConfig>("GET", "/config"),
     staleTime: Infinity,
   });
+}
+
+export interface Roles {
+  organizerOf: number[];
+  staffOf: number[];
+}
+
+/** Events the signed-in wallet organizes or staffs; empty when signed out. */
+export function useRoles() {
+  const { token, address } = useSession();
+  const roles = useQuery({
+    queryKey: ["me", "roles", address, token],
+    enabled: Boolean(token),
+    queryFn: () => api<Roles>("GET", "/me/roles", { token }),
+    refetchInterval: 5000,
+  });
+  const organizerOf = roles.data?.organizerOf ?? [];
+  const staffOf = roles.data?.staffOf ?? [];
+  return {
+    isOrganizer: organizerOf.length > 0,
+    canScan: organizerOf.length > 0 || staffOf.length > 0,
+    organizerOf,
+    staffOf,
+  };
 }
 
 export const eth = (wei: string | bigint) => `${formatEther(BigInt(wei))} ETH`;
@@ -53,6 +78,13 @@ export function useContractTx() {
     if (!walletClient || !cfg) throw new Error("Connect a wallet first");
     setState({ status: "pending", label });
     try {
+      // A tx to an address without code "succeeds" but does nothing (e.g. chain restarted, not redeployed).
+      const code = await publicClient.getCode({ address: cfg.contractAddress });
+      if (!code || code === "0x") {
+        throw new Error(
+          `No TicketChain contract at ${cfg.contractAddress} on this chain. Run "npm run deploy:local".`,
+        );
+      }
       // The ABI is fully typed; dynamic function names are validated by viem at runtime.
       const hash = await walletClient.writeContract({
         chain,

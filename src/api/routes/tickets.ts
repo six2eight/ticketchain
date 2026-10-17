@@ -16,6 +16,34 @@ export function ticketRoutes(app: App, { db, config, clock }: AppDeps) {
   const base = config.PUBLIC_BASE_URL.replace(/\/+$/, "");
 
   app.get(
+    "/me/roles",
+    {
+      preHandler: app.requireAuth,
+      schema: {
+        tags: ["tickets"],
+        summary: "Events I organize or staff (drives which menus the UI shows)",
+        security: bearer,
+      },
+    },
+    async (req) => {
+      const me = authAddress(req);
+      const [organized, staffed] = await Promise.all([
+        db.event.findMany({
+          where: { organizer: me },
+          select: { id: true },
+          orderBy: { id: "asc" },
+        }),
+        db.staff.findMany({
+          where: { wallet: me },
+          select: { eventId: true },
+          orderBy: { eventId: "asc" },
+        }),
+      ]);
+      return { organizerOf: organized.map((e) => e.id), staffOf: staffed.map((s) => s.eventId) };
+    },
+  );
+
+  app.get(
     "/me/tickets",
     {
       preHandler: app.requireAuth,
